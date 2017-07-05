@@ -6,7 +6,7 @@ import time
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-sys.path.insert(0, "/misc/kcgscratch1/ChoGroup/jasonlee/dl4mt-c2c/char2char") # change appropriately
+sys.path.insert(0, "/nfs/topaz/lcheung/code/dl4mt-c2c/char2char") # change appropriately
 
 import numpy
 import cPickle as pkl
@@ -32,6 +32,7 @@ def translate_model(jobqueue, resultqueue, model, options, k, normalize, build_s
         use_noise.set_value(0.)
         # sample given an input sequence and obtain scores
         # NOTE : if seq length too small, do something about it
+        # beam size is 5 by default
         sample, score = gen_sample(tparams, f_init, f_next,
                                    numpy.array(seq).reshape([len(seq), 1]),
                                    options, trng=trng, k=k, maxlen=500,
@@ -41,8 +42,11 @@ def translate_model(jobqueue, resultqueue, model, options, k, normalize, build_s
         if normalize:
             lengths = numpy.array([len(s) for s in sample]) 
             score = score / lengths
+
         sidx = numpy.argmin(score)
-        return sample[sidx]
+        score = 1 / numpy.min(score) # higher the score, the better
+
+        return sample[sidx], score
 
     while jobqueue:
         req = jobqueue.pop(0)
@@ -50,9 +54,10 @@ def translate_model(jobqueue, resultqueue, model, options, k, normalize, build_s
         idx, x = req[0], req[1]
         if not silent:
             print "sentence", idx, model_id
-        seq = _translate(x)
+        seq, score = _translate(x)
+        #print 'Seq', seq, 'Score:', score
 
-        resultqueue.append((idx, seq))
+        resultqueue.append((idx, seq, score))
     return
 
 def main(model, dictionary, dictionary_target, source_file, saveto, k=5,
@@ -143,10 +148,10 @@ def main(model, dictionary, dictionary_target, source_file, saveto, k=5,
 
         for idx in xrange(n_samples):
             resp = resultqueue.pop(0)
-            trans[resp[0]] = resp[1]
+            trans[resp[0]] = (resp[1], resp[2]) # (sequence, score)
             if numpy.mod(idx, 10) == 0:
                 if not silent:
-                    print 'Sample ', (idx+1), '/', n_samples, ' Done', model_id
+                    print 'Sample ', (idx+1), '/', n_samples, ' Done decoding using', model_id
         return trans
 
     print 'Translating ', source_file, '...'
@@ -154,11 +159,18 @@ def main(model, dictionary, dictionary_target, source_file, saveto, k=5,
     print "jobs sent"
 
     translate_model(jobqueue, resultqueue, model, options, k, normalize, build_sampler, gen_sample, init_params, model_id, silent)
-    trans = _seqs2words(_retrieve_jobs(n_samples, silent))
+    raw_outputs = _retrieve_jobs(n_samples, silent)
+    seqs = list(map(lambda pair : pair[0], raw_outputs))
+    scores = list(map(lambda pair : pair[1], raw_outputs))
+    trans = _seqs2words(seqs)
     print "translations retrieved"
 
+    with open('%s.scores' % saveto, 'w') as f:
+        f.write(u'\n'.join(map(lambda s : str(s), scores)).encode('utf-8'))
+        f.write(u'\n') # missing end newline
     with open(saveto, 'w') as f:
-        print >>f, u'\n'.join(trans).encode('utf-8')
+        f.write(u'\n'.join(trans).encode('utf-8'))
+        f.write(u'\n')
 
     print "Done", saveto
 
@@ -169,69 +181,26 @@ if __name__ == "__main__":
     parser.add_argument('-enc_c', action="store_true", default=True) # is encoder character-level?
     parser.add_argument('-dec_c', action="store_true", default=True) # is decoder character-level?
     parser.add_argument('-utf8', action="store_true", default=True)
-    parser.add_argument('-many', action="store_true", default=False) # multilingual model?
     parser.add_argument('-model', type=str) # absolute path to a model (.npz file)
-    parser.add_argument('-translate', type=str, help="de_en / cs_en / fi_en / ru_en") # which language?
     parser.add_argument('-saveto', type=str, ) # absolute path where the translation should be saved
-    parser.add_argument('-which', type=str, help="dev / test1 / test2", default="dev") # if you wish to translate any of development / test1 / test2 file from WMT15, simply specify which one here
-    parser.add_argument('-source', type=str, default="") # if you wish to provide your own file to be translated, provide an absolute path to the file to be translated
     parser.add_argument('-silent', action="store_true", default=False) # suppress progress messages
+    parser.add_argument('-dict_src', type=str, default=None)
+    parser.add_argument('-dict_trg', type=str, default=None)
+    parser.add_argument('-source', type=str, default=None)
 
     args = parser.parse_args()
 
-    which_wmt = None
-    if args.many:
-        which_wmt = "multi-wmt15"
-    else:
-        which_wmt = "wmt15"
-
-    data_path = "/misc/kcgscratch1/ChoGroup/jasonlee/temp_data/%s/" % which_wmt # change appropriately
-
-    if args.which not in "dev test1 test2".split():
-        raise Exception('1')
-
-    if args.translate not in ["de_en", "cs_en", "fi_en", "ru_en"]:
-        raise Exception('1')
-
-    if args.translate == "fi_en" and args.which == "test2":
-        raise Exception('1')
-
-    if args.many:
-        from wmt_path_iso9 import *
-
-        dictionary = wmts['many_en']['dic'][0][0]
-        dictionary_target = wmts['many_en']['dic'][0][1]
-        source = wmts[args.translate][args.which][0][0]
-
-    else:
-        from wmt_path import *
-
-        aa = args.translate.split("_")
-        lang = aa[0]
-        en = aa[1]
-
-        dictionary = "%s%s/train/all_%s-%s.%s.tok.304.pkl" % (lang, en, lang, en, lang)
-        dictionary_target = "%s%s/train/all_%s-%s.%s.tok.300.pkl" % (lang, en, lang, en, en)
-        source = wmts[args.translate][args.which][0][0]
-
     char_base = args.model.split("/")[-1]
 
-    dictionary = data_path + dictionary
-    dictionary_target = data_path + dictionary_target
-    source = data_path + source
-
-    if args.source != "":
-        source = args.source
-
-    print "src dict:", dictionary
-    print "trg dict:", dictionary_target
-    print "source:", source
+    print "src dict:", args.dict_src
+    print "trg dict:", args.dict_trg
+    print "source:", args.source
     print "dest :", args.saveto
 
     print args
 
     time1 = time.time()
-    main(args.model, dictionary, dictionary_target, source,
+    main(args.model, args.dict_src, args.dict_trg, args.source,
          args.saveto, k=args.k, normalize=args.n, encoder_chr_level=args.enc_c,
          decoder_chr_level=args.dec_c,
          utf8=args.utf8,

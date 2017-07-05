@@ -10,15 +10,14 @@ from conv_tools import *
 from prepare_data import *
 
 def main(job_id, args):
-    save_file_name = args.model_name
-    source_dataset = args.data_path + wmts[args.translate]['train'][0][0]
-    target_dataset = args.data_path + wmts[args.translate]['train'][0][1]
-    valid_source_dataset = args.data_path + wmts[args.translate]['dev'][0][0]
-    valid_target_dataset = args.data_path + wmts[args.translate]['dev'][0][1]
-    source_dictionary = args.data_path + wmts[args.translate]['dic'][0][0]
-    target_dictionary = args.data_path + wmts[args.translate]['dic'][0][1]
+    source_dataset = args.src_train
+    target_dataset = args.trg_train
+    valid_source_dataset = args.src_dev
+    valid_target_dataset = args.trg_dev
+    source_dictionary = args.src_dict
+    target_dictionary = args.trg_dict
 
-    print args.model_path, save_file_name
+    print args.model_path, args.model_name
     print source_dataset
     print target_dataset
     print valid_source_dataset
@@ -41,7 +40,7 @@ def main(job_id, args):
         pool_stride=args.pool_stride,
 
         model_path=args.model_path,
-        save_file_name=save_file_name,
+        save_file_name=args.model_name,
         re_load=args.re_load,
         re_load_old_setting=args.re_load_old_setting,
 
@@ -90,7 +89,15 @@ if __name__ == '__main__':
     import sys, time
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-translate', type=str, default="de_en", help="de_en / cs_en / fi_en / ru_en")
+    # parser.add_argument('-translate', type=str, default="de_en", help="de_en / cs_en / fi_en / ru_en")
+    parser.add_argument('-src_train', type=str, default=None, help='train src file')
+    parser.add_argument('-src_dev', type=str, default=None, help='dev src file')
+    parser.add_argument('-trg_train', type=str, default=None, help='train dev file')
+    parser.add_argument('-trg_dev', type=str, default=None, help='dev trg file')
+    parser.add_argument('-src_dict', type=str, default=None, help='src dict file')
+    parser.add_argument('-trg_dict', type=str, default=None, help='trg dict file')
+    parser.add_argument('-model_path', type=str, default=None, help='dir of model')
+
     parser.add_argument('-highway', type=int, default=4)
 
     parser.add_argument('-conv_width', type=str, default="1-2-3-4-5-6-7-8")
@@ -142,21 +149,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if args.translate == "fi_en":
-        args.n_words_src = 304
-        args.n_words = 302
-
-    if args.translate not in "de_en cs_en fi_en ru_en".split():
-        raise Exception('1')
-
     args.model_name = "bi-char2char"
 
     args.conv_width = [ int(x) for x in args.conv_width.split("-") ]
     args.conv_nkernels = [ int(x) for x in args.conv_nkernels.split("-") ]
-
-    args.model_path = "/misc/kcgscratch1/ChoGroup/jasonlee/dl4mt-c2c/models/" # change accordingly
-    args.data_path = "/misc/kcgscratch1/ChoGroup/jasonlee/temp_data/wmt15/" # change accordingly
-    args.model_path = args.model_path + args.translate + "/"
 
     print "Model path:", args.model_path
 

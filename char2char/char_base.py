@@ -307,6 +307,7 @@ def gen_sample(tparams, f_init, f_next, x, options, trng=None,
             if nw == 0:
                 break
         else:
+            # NOTE: take the argmin because subtracting prediction prob.
             cand_scores = hyp_scores[:, None] - numpy.log(next_p)
             cand_flat = cand_scores.flatten()
 

@@ -60,9 +60,16 @@ def main(filename, short_list, src):
             worddict[ww] = ii + len(tokens)
 
     print 'start dump'
-    with open('%s.%d.pkl' % (filename, short_list+len(tokens)), 'wb') as f:
-        pkl.dump(worddict, f)
+    if short_list is not None:
+      with open('%s.%d.pkl' % (filename, int(short_list)+len(tokens)), 'wb') as f:
+          pkl.dump(worddict, f)
+    else:
+      with open('%s.%d.pkl' % (filename, len(tokens)), 'wb') as f:
+          pkl.dump(worddict, f)
 
-    f.close()
     print 'Done'
     print len(worddict)
+
+if __name__ == '__main__':
+  assert(len(sys.argv) == 4)
+  main(sys.argv[1], sys.argv[2], sys.argv[3])
