@@ -90,13 +90,13 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     # parser.add_argument('-translate', type=str, default="de_en", help="de_en / cs_en / fi_en / ru_en")
-    parser.add_argument('-src_train', type=str, default=None, help='train src file')
-    parser.add_argument('-src_dev', type=str, default=None, help='dev src file')
-    parser.add_argument('-trg_train', type=str, default=None, help='train dev file')
-    parser.add_argument('-trg_dev', type=str, default=None, help='dev trg file')
-    parser.add_argument('-src_dict', type=str, default=None, help='src dict file')
-    parser.add_argument('-trg_dict', type=str, default=None, help='trg dict file')
-    parser.add_argument('-model_path', type=str, default=None, help='dir of model')
+    parser.add_argument('-src_train', required=True, type=str, default=None, help='train src file')
+    parser.add_argument('-src_dev', required=True, type=str, default=None, help='dev src file')
+    parser.add_argument('-trg_train', required=True, type=str, default=None, help='train dev file')
+    parser.add_argument('-trg_dev', required=True, type=str, default=None, help='dev trg file')
+    parser.add_argument('-src_dict', required=True, type=str, default=None, help='src dict file')
+    parser.add_argument('-trg_dict', required=True, type=str, default=None, help='trg dict file')
+    parser.add_argument('-model_path', required=True, type=str, default=None, help='dir of model')
 
     parser.add_argument('-highway', type=int, default=4)
 
