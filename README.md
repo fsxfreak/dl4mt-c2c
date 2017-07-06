@@ -57,7 +57,7 @@ $ python bpe2char/train_bi_bpe2char.py -translate <LANGUAGE_PAIR>
 ```
 #### Bilingual char2char
 ```bash
-$ python char2char/train_bi_char2char.py -translate <LANGUAGE_PAIR>
+$ python char2char/train_bi_char2char.py -src_train <file> -src_dev <file> -trg_train <file> -trg_dev <file> -src_dict <file> -trg_dict <file> -model_path <directory>
 ```
 #### Multilingual bpe2char
 ```bash
