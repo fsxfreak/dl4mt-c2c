@@ -288,6 +288,7 @@ def gen_sample(tparams, f_init, f_next, x, options, trng=None,
     next_state_char, next_state_word, ctx0 = ret[0], ret[1], ret[2]
     next_w = -1 * numpy.ones((1,)).astype('int64')  # bos indicator
 
+    total_log_p = 0.0
     for ii in xrange(maxlen):
         ctx = numpy.tile(ctx0, [live_k, 1])
         inps = [next_w, ctx, next_state_char, next_state_word]
@@ -352,6 +353,8 @@ def gen_sample(tparams, f_init, f_next, x, options, trng=None,
                     hyp_states_char.append(new_hyp_states_char[idx])
                     hyp_states_word.append(new_hyp_states_word[idx])
             hyp_scores = numpy.array(hyp_scores)
+
+
             live_k = new_live_k
 
             if new_live_k < 1:
@@ -369,5 +372,5 @@ def gen_sample(tparams, f_init, f_next, x, options, trng=None,
             for idx in xrange(live_k):
                 sample.append(hyp_samples[idx])
                 sample_score.append(hyp_scores[idx])
-
+ 
     return sample, sample_score

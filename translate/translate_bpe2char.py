@@ -166,39 +166,15 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    which_wmt = None
-    if args.many:
-        which_wmt = "multi-wmt15"
-    else:
-        which_wmt = "wmt15"
-    data_path = "/misc/kcgscratch1/ChoGroup/jasonlee/temp_data/%s/" % which_wmt # change appropriately
+    #data_path = "/misc/kcgscratch1/ChoGroup/jasonlee/temp_data/%s/" % which_wmt # change appropriately
 
-    if args.which not in "dev test1 test2".split():
-        raise Exception('1')
+    aa = args.translate.split("_")
+    lang = aa[0]
+    en = aa[1]
 
-    if args.translate not in ["de_en", "cs_en", "fi_en", "ru_en"]:
-        raise Exception('1')
-
-    if args.translate == "fi_en" and args.which == "test2":
-        raise Exception('1')
-
-    if args.many:
-        from wmt_path_iso9 import *
-
-        dictionary = wmts["many_en"]["dic"][1][0]
-        dictionary_target = wmts["many_en"]["dic"][0][1]
-        source = wmts[args.translate][args.which][1][0]
-
-    else:
-        from wmt_path import *
-
-        aa = args.translate.split("_")
-        lang = aa[0]
-        en = aa[1]
-
-        dictionary = "%s%s/train/all_%s-%s.%s.tok.bpe.word.pkl" % (lang, en, lang, en, lang)
-        dictionary_target = "%s%s/train/all_%s-%s.%s.tok.300.pkl" % (lang, en, lang, en, en)
-        source = wmts[args.translate][args.which][1][0]
+    dictionary = "%s%s/train/all_%s-%s.%s.tok.bpe.word.pkl" % (lang, en, lang, en, lang)
+    dictionary_target = "%s%s/train/all_%s-%s.%s.tok.300.pkl" % (lang, en, lang, en, en)
+    #source = wmts[args.translate][args.which][1][0]
 
     # /work/yl1363/bpe2char/de_en/deen_bpe2char_two_layer_gru_decoder_adam.grads.355000.npz
     model_id = args.model.split('/')[-1]

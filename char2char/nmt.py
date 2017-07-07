@@ -493,6 +493,8 @@ def train(
                     else:
                         score = score / numpy.array([len(s) for s in sample])
                         ss = sample[score.argmin()]
+                        print '@@@aftergensample'
+                        print ss, sample, score
                     if target_word_level:
                         for vv in ss:
                             if vv == 0:

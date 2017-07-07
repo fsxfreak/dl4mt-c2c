@@ -3,7 +3,6 @@ import sys
 import argparse
 import string
 from collections import OrderedDict
-from wmt_path import *
 from char_base import *
 from nmt import train
 from conv_tools import *

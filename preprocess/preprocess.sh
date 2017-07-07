@@ -98,12 +98,15 @@ BASE_TRG_TEST=${BASE_TRG_TEST}.tok
 
 # build dictionary
 echo "Now building dictionary"
-cat ${BASE_SRC_TRAIN} ${BASE_SRC_DEV} ${BASE_SRC_TEST} > ${BASE_SRC}.tok
-python build_dictionary_char.py ${BASE_TRG}.tok 1000 1
-rm ${BASE_SRC}.tok
-cat ${BASE_TRG_TRAIN} ${BASE_TRG_DEV} ${BASE_TRG_TEST} > ${BASE_TRG}.tok
-python build_dictionary_char.py ${BASE_SRC}.tok 1000 1
-rm ${BASE_TRG}.tok
+python build_dictionary_char.py ${BASE_SRC_TRAIN} 1000 1
+
+python build_dictionary_char.py ${BASE_TRG_TRAIN} 1000 1
+
+ret="$?"
+if [[ "$ret" -ne 0 ]]; then
+    echo "Something went wrong."
+    exit 1
+fi
 
 date
 echo "Finished preprocessing data for char2char model."
