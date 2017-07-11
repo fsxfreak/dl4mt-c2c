@@ -136,9 +136,9 @@ if __name__ == '__main__':
     parser.add_argument('-decay_c', type=int, default=0, help="")
     parser.add_argument('-clip_c', type=int, default=1, help="")
 
-    parser.add_argument('-saveFreq', type=int, default=5000, help="")
+    parser.add_argument('-saveFreq', type=int, default=250, help="")
     parser.add_argument('-sampleFreq', type=int, default=5000, help="")
-    parser.add_argument('-dispFreq', type=int, default=1000, help="")
+    parser.add_argument('-dispFreq', type=int, default=250, help="")
     parser.add_argument('-validFreq', type=int, default=5000, help="")
     parser.add_argument('-pbatchFreq', type=int, default=5000, help="")
     parser.add_argument('-sort_size', type=int, default=20, help="")

@@ -41,7 +41,11 @@ def translate_model(jobqueue, resultqueue, model, options, k, normalize, build_s
         # normalize scores according to sequence lengths
         if normalize:
             lengths = numpy.array([len(s) for s in sample]) 
+            print '@@@@@@@@normalize lengths'
+            print lengths, score
             score = score / lengths
+            print '@@after'
+            print score
 
         sidx = numpy.argmin(score)
         score = 1 / numpy.min(score) # higher the score, the better

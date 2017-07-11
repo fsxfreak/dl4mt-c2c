@@ -74,6 +74,41 @@ def init_params(options):
 
     return params
 
+def test_sample(f_init, f_next, x, y):
+  # get initial state of decoder rnn and encoder context
+  ret = f_init(x)
+
+  next_state_char, next_state_word, ctx = ret[0], ret[1], ret[2]
+  next_w = -1 * numpy.ones((1,)).astype('int64')  # bos indicator
+  print '$$$testbefore'
+  print 'ctx;', ctx.shape
+  print 'next_w;', next_w.shape
+  print 'next_state_char;', next_state_char.shape
+  print 'next_state_word;', next_state_word.shape
+  print 'y;', y
+  print 'y;', y.shape
+
+  total_p = 0.0
+  for ii in xrange(len(y)):
+    inps = [next_w, ctx, next_state_char, next_state_word]
+    ret = f_next(*inps)
+    next_p, next_w, next_state_char, next_state_word = ret[0], ret[1], ret[2], ret[3]
+
+    print '$$$testloop'
+    print 'ctx;', ctx.shape
+    print 'next_p;', next_p.shape
+    print 'next_w;', next_w.shape
+    print 'next_state_char;', next_state_char.shape
+    print 'next_state_word;', next_state_word.shape
+    print ii, 'force;', y[ii, 0][0]
+    total_p += numpy.log(next_p[0, y[ii, 0][0]])
+
+    #next_w = numpy.array([w[-1] for w in hyp_samples])
+    #next_state_char = numpy.array(hyp_states_char)
+    #next_state_word = numpy.array(hyp_states_word)
+
+  return total_p
+
 
 def build_model(tparams, options):
     opt_ret = OrderedDict()
@@ -288,7 +323,6 @@ def gen_sample(tparams, f_init, f_next, x, options, trng=None,
     next_state_char, next_state_word, ctx0 = ret[0], ret[1], ret[2]
     next_w = -1 * numpy.ones((1,)).astype('int64')  # bos indicator
 
-    total_log_p = 0.0
     for ii in xrange(maxlen):
         ctx = numpy.tile(ctx0, [live_k, 1])
         inps = [next_w, ctx, next_state_char, next_state_word]
@@ -372,5 +406,5 @@ def gen_sample(tparams, f_init, f_next, x, options, trng=None,
             for idx in xrange(live_k):
                 sample.append(hyp_samples[idx])
                 sample_score.append(hyp_scores[idx])
- 
+
     return sample, sample_score
