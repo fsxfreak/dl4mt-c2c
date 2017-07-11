@@ -41,11 +41,7 @@ def translate_model(jobqueue, resultqueue, model, options, k, normalize, build_s
         # normalize scores according to sequence lengths
         if normalize:
             lengths = numpy.array([len(s) for s in sample]) 
-            print '@@@@@@@@normalize lengths'
-            print lengths, score
             score = score / lengths
-            print '@@after'
-            print score
 
         sidx = numpy.argmin(score)
         score = 1 / numpy.min(score) # higher the score, the better
@@ -92,6 +88,7 @@ def main(model, dictionary, dictionary_target, source_file, saveto, k=5,
     word_idict_trg = dict()
     for kk, vv in word_dict_trg.iteritems():
         word_idict_trg[vv] = kk
+
     #word_idict_trg[0] = 'ZERO'
     #word_idict_trg[1] = 'UNK'
 
@@ -108,7 +105,10 @@ def main(model, dictionary, dictionary_target, source_file, saveto, k=5,
                 if w == 0:
                     break
                 if utf8:
-                    ww.append(word_idict_trg[w].encode('utf-8'))
+                    try:
+                        ww.append(word_idict_trg[w].encode('utf-8'))
+                    except:
+                        ww.append('?'.encode('utf-8'))
                 else:
                     ww.append(word_idict_trg[w])
             if decoder_chr_level:
