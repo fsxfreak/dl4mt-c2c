@@ -292,12 +292,48 @@ def build_sampler(tparams, options, trng, use_noise):
 
     # next word probability
     print 'Building f_next...',
+
     inps = [y, ctx, init_state_char, init_state_word]
     outs = [next_probs, next_sample, next_state_char, next_state_word]
     f_next = theano.function(inps, outs, name='f_next', profile=profile)
     print 'Done'
 
+    print '$$shapes'
+    print 'y;', tensor.shape(y)
+
     return f_init, f_next
+
+def test_sample(f_init, f_next, x, y):
+  # get initial state of decoder rnn and encoder context
+  ret = f_init(x)
+
+  next_state_char, next_state_word, ctx = ret[0], ret[1], ret[2]
+  next_w = -1 * numpy.ones((1,)).astype('int64')  # bos indicator
+  print '$$$testbefore'
+  print 'ctx;', ctx.shape
+  print 'next_w;', next_w.shape
+  print 'next_state_char;', next_state_char.shape
+  print 'next_state_word;', next_state_word.shape
+
+  total_p = 0.0
+  for ii in xrange(len(y)):
+    inps = [next_w, ctx, next_state_char, next_state_word]
+    ret = f_next(*inps)
+    next_p, next_w, next_state_char, next_state_word = ret[0], ret[1], ret[2], ret[3]
+
+    print '$$$testloop'
+    print 'ctx;', ctx.shape
+    print 'next_p;', next_p.shape
+    print 'next_w;', next_w.shape
+    print 'next_state_char;', next_state_char.shape
+    print 'next_state_word;', next_state_word.shape
+    total_p += numpy.log(next_p[0, y[ii, 0][0]])
+
+    #next_w = numpy.array([w[-1] for w in hyp_samples])
+    #next_state_char = numpy.array(hyp_states_char)
+    #next_state_word = numpy.array(hyp_states_word)
+
+  return total_p
 
 def gen_sample(tparams, f_init, f_next, x, options, trng=None,
                k=1, maxlen=500, stochastic=True, argmax=False):
@@ -390,7 +426,6 @@ def gen_sample(tparams, f_init, f_next, x, options, trng=None,
                     hyp_states_char.append(new_hyp_states_char[idx])
                     hyp_states_word.append(new_hyp_states_word[idx])
             hyp_scores = numpy.array(hyp_scores)
-
 
             live_k = new_live_k
 
