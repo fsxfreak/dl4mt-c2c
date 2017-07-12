@@ -10,6 +10,8 @@ We present code for training and decoding four different models:
 3. multilingual bpe2char
 4. multilingual char2char
 
+This fork has extra code for forced decoding, and easier-to-use parameters for custom datasets (with support currently only for bilingual char2char).
+
 Dependencies
 ------------------
 ### Python
@@ -48,16 +50,27 @@ $ export THEANO_FLAGS=device=gpu,floatX=float32,lib.cnmem=0.95,allow_gc=False
 
 On a pre-2016 Titan X GPU with 12GB RAM, our bpe2char models were trained with `cnmem`. Our char2char models (both bilingual and multilingual) were trained without `cnmem` (due to lack of RAM).
 
-### Training models
-Before executing the following, modify `train*.py` such that the correct directory containing WMT15 corpora is referenced.
-
 #### Bilingual bpe2char
 ```bash
 $ python bpe2char/train_bi_bpe2char.py -translate <LANGUAGE_PAIR>
 ```
 #### Bilingual char2char
+This is an example command, so make sure to change the parameters.
 ```bash
-$ python char2char/train_bi_char2char.py -src_train <file> -src_dev <file> -trg_train <file> -trg_dev <file> -src_dict <file> -trg_dict <file> -model_path <directory>
+$ python char2char/train_bi_char2char.py \                       
+        -src_train "$SRC_TRAIN" \                              
+        -src_dev "$SRC_DEV" \                                  
+        -trg_train "$TRG_TRAIN" \                              
+        -trg_dev "$TRG_DEV" \                                  
+        -src_dict "$SRC_DICT" \                                
+        -trg_dict "$TRG_DICT" \                                
+        -model_path /nfs/topaz/lcheung/models/dl4mt-toy-dict/ \
+        -n_words_src 9 \                                       
+        -n_words 9 \                                           
+        -re_load -re_load_old_setting \                        
+        -sampleFreq 2500 \                                     
+        -saveFreq 1000 \                                       
+        -dispFreq 500                                          
 ```
 #### Multilingual bpe2char
 ```bash
@@ -73,22 +86,31 @@ To resume training a model from a checkpoint, simply append `-re_load` and `-re_
 ### Using Custom Datasets
 To train your models using your own dataset (and not the WMT'15 corpus), you first need to learn your vocabulary using `build_dictionary_char.py` or `build_dictionary_word.py` for char2char or bpe2char model, respectively. For the bpe2char model, you additionally need to learn your BPE segmentation rules on the source corpus using the Subword-NMT repository (see below).
 
+```bash
+$ python build_dictionary_char.py src.train [word padding] 1
+$ python build_dictionary_char.py trg.train [word padding] 1
+```
+
+Make sure to take the correct size of the dictionary from the output of the program.
+
 Decoding
 ------------------
 
-### Decoding WMT'15 validation / test files
-Before executing the following, modify `translate*.py` such that the correct directory containing WMT15 corpora is referenced.
+### Decoding validation / test files.
 
 ```bash
 $ export THEANO_FLAGS=device=gpu,floatX=float32,lib.cnmem=0.95,allow_gc=False
-$ python translate/translate_bpe2char.py -model <PATH_TO_MODEL.npz> -translate <LANGUAGE_PAIR> -saveto <DESTINATION> -which <VALID/TEST_SET> # for bpe2char models
-$ python translate/translate_char2char.py -model <PATH_TO_MODEL.npz> -translate <LANGUAGE_PAIR> -saveto <DESTINATION> -which <VALID/TEST_SET> # for char2char models
+$ python code/dl4mt-c2c/translate/translate_char2char.py \
+    -model "/nfs/topaz/lcheung/models/dl4mt-toy-dict/bi-char2char.grads.6000.npz" \                                  
+    -saveto "output/dl-dec-bi-toy-dict-${num}" \
+    -dict_src "src.train.404.pkl" \                            
+    -dict_trg "trg.train.404.pkl" \                          
+    -source "src.test.small" \                                 
 ```
 
-When choosing which pre-trained model to give to `-model`, make sure to choose e.g. `.grads.123000.npz`. The models with `.grads` in their names are the optimal models and you should be decoding from those.
+When choosing which pre-trained model to give to `-model`, make sure to choose e.g. `.grads.123000.npz`. The models with `.grads.[num]` in their names are the optimal models and you should be decoding from those.
 
 ### Decoding an arbitrary file
-Remove `-which <VALID/TEST_SET>` and append `-source <PATH_TO_SOURCE>`.
 
 If you choose to decode your own source file, make sure it is:
 
@@ -97,7 +119,7 @@ If you choose to decode your own source file, make sure it is:
 3. Cyrillic characters should be converted to Latin for multilingual models.
 
 ### Decoding multilingual models
-Append `-many` (of course, provide a path to a multilingual model for `-model`).
+In progress.
 
 Evaluation
 ------------------
