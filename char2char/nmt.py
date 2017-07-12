@@ -45,7 +45,7 @@ def pred_probs(f_log_probs, prepare_data, options, iterator, pool_stride, verbos
 
         if numpy.isnan(numpy.mean(probs)):
             import ipdb
-            ipdb.set_trace()
+            #ipdb.set_trace()
 
         if verbose:
             if numpy.mod(cnt, verboseFreq) == 0:
@@ -236,7 +236,7 @@ def train(
     # NOTE : this is where we build the model
     inps = [x, x_mask, y, y_mask]
 
-    print 'Building sampler...\n',
+    print 'Building sampler...'
     f_init, f_next = build_sampler(tparams, model_options, trng, use_noise)
     #print 'Done'
 
@@ -259,7 +259,7 @@ def train(
 
         if numpy.isnan(valid_err):
             import ipdb
-            ipdb.set_trace()
+            #ipdb.set_trace()
 
         print 'Reload sanity check: Valid ', valid_err
 
@@ -398,12 +398,12 @@ def train(
             # and continue training - but not done here
             if numpy.isnan(cost) or numpy.isinf(cost):
                 import ipdb
-                ipdb.set_trace()
+                #ipdb.set_trace()
                 NaN_cost_cnt += 1
 
             if not_finite:
                 import ipdb
-                ipdb.set_trace()
+                #ipdb.set_trace()
                 NaN_grad_cnt += 1
                 continue
 
@@ -553,7 +553,7 @@ def train(
 
                 if numpy.isnan(valid_err):
                     import ipdb
-                    ipdb.set_trace()
+                    #ipdb.set_trace()
 
                 print 'Valid ', valid_err
 
