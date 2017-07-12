@@ -26,7 +26,7 @@ from mixer import *
 from data_iterator import TextIterator
 
 # calculate the log probablities on a given corpus using translation model
-def pred_probs(f_log_probs, prepare_data, options, iterator, pool_stride, verbose=True, verboseFreq=None):
+def pred_probs(f_log_probs, prepare_data, options, iterator, pool_stride, verbose=True, verboseFreq=10):
     # NOTE : iterator is ALWAYS valid
     probs = []
 
@@ -566,6 +566,8 @@ def train(
 
                 params = unzip(tparams)
                 optparams = unzip(toptparams)
+                print '####unzippin'
+                print 'toptparams;', toptparams
                 numpy.savez(file_name, history_errs=history_errs, uidx=uidx, eidx=eidx,
                             cidx=cidx, **params)
                 numpy.savez(opt_file_name, **optparams)

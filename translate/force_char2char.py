@@ -12,14 +12,13 @@ import numpy
 import cPickle as pkl
 from mixer import *
 
-from char_base import init_params
 from nmt import pred_probs
 from prepare_data import prepare_data
 from data_iterator import TextIterator
+from char_base import build_sampler, build_model, init_params
 
 def main(model_dir, model_prefix, dict_src, dict_trg, hyp_filename, 
         saveto, n_words_src, n_words):
-  from char_base import (build_sampler, init_params, test_sample)
 
   print 'Loading model.'
 
@@ -53,33 +52,47 @@ def main(model_dir, model_prefix, dict_src, dict_trg, hyp_filename,
   with open(hyp_filename, 'r') as f:
     for line in f:
       toks = line.strip().split('\t')
-      hyp_src.write('%s\n', toks[0].strip())
-      hyp_trg.write('%s\n', toks[1].strip())
+      hyp_src.write('%s\n' % toks[0].strip())
+      hyp_trg.write('%s\n' % toks[1].strip())
   hyp_src.close()
   hyp_trg.close()
 
   test = TextIterator(source=hyp_src_fname,
                       target=hyp_trg_fname,
-                      source_dict=dictionary,
-                      target_dict=dictionary_target,
+                      source_dict=dict_src,
+                      target_dict=dict_trg,
                       n_words_source=n_words_src,
                       n_words_target=n_words,
                       source_word_level=0,
                       target_word_level=0,
-                      batch_size=1,
-                      sort_size=1) #?? dunno what this param does
+                      batch_size=32,
+                      sort_size=20) #?? dunno what this param does
+
+  valid = TextIterator(source="/nfs/topaz/lcheung/data/toy/toy.ug-en.ug.dev",
+                       target="/nfs/topaz/lcheung/data/toy/toy.ug-en.en.dev",
+                       source_dict=dict_src,
+                       target_dict=dict_trg,
+                       n_words_source=n_words_src,
+                       n_words_target=n_words,
+                       source_word_level=0,
+                       target_word_level=0,
+                       batch_size=32,
+                       sort_size=20)
+
+  print 'Building model...\n',
   trng, use_noise, \
       x, x_mask, y, y_mask, \
       opt_ret, \
       cost = \
       build_model(tparams, model_options)
   inps = [x, x_mask, y, y_mask]
- 
-  # TODO maybe don't need this
-  print 'Building sampler...\n',
-  f_init, f_next = build_sampler(tparams, model_options, trng, use_noise)
 
-  print 'Building f_log_probs...',
+  '''
+  # TODO maybe don't need this
+  f_init, f_next = build_sampler(tparams, model_options, trng, use_noise)
+  '''
+
+  print 'Building f_log_probs...'
   f_log_probs = theano.function(inps, cost, profile=profile)
   use_noise.set_value(0.)
 
@@ -87,21 +100,25 @@ def main(model_dir, model_prefix, dict_src, dict_trg, hyp_filename,
                            prepare_data,
                            model_options,
                            test,
-                           1)
-  print len(test_scores)
-  print test_scores.shape
-  print test_scores[:5]
+                           5)
+  valid_scores = pred_probs(f_log_probs,
+                           prepare_data,
+                           model_options,
+                           valid,
+                           5)
+  print test_scores.mean()
+  print valid_scores.mean()
 
-  '''
-  print len(scores)
-  scores = [ str(f) for f in scores ]
+  os.remove(hyp_src_fname)
+  os.remove(hyp_trg_fname)
+
+  test_scores = [ str(f) for f in test_scores ]
 
   with open(saveto, 'w') as f:
-    f.write(u'\n'.join(scores).encode('utf-8'))
+    f.write(u'\n'.join(test_scores).encode('utf-8'))
     f.write(u'\n')
 
   print "Done", saveto
-  '''
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

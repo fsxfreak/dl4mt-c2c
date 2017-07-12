@@ -101,14 +101,13 @@ def main(model, dictionary, dictionary_target, source_file, saveto, k=5,
         capsw = []
         for cc in caps:
             ww = []
+            print cc
             for w in cc:
                 if w == 0:
                     break
+                print '\t', w
                 if utf8:
-                    try:
-                        ww.append(word_idict_trg[w].encode('utf-8'))
-                    except:
-                        ww.append('?'.encode('utf-8'))
+                    ww.append(word_idict_trg[w].encode('utf-8'))
                 else:
                     ww.append(word_idict_trg[w])
             if decoder_chr_level:
