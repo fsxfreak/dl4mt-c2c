@@ -2,6 +2,7 @@ import argparse
 import sys
 import os
 import time
+import tempfile
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -17,16 +18,16 @@ from prepare_data import prepare_data
 from data_iterator import TextIterator
 from char_base import build_sampler, build_model, init_params
 
-def main(model_dir, model_prefix, dict_src, dict_trg, hyp_filename, 
+def main(model_dir, model_pkl, model_grads, dict_src, dict_trg, hyp_filename, 
         saveto, n_words_src, n_words):
 
   print 'Loading model.'
 
-  model_file = os.path.join(model_dir, '%s.pkl' % model_prefix)
+  model_file = os.path.join(model_dir, model_pkl)
   with open(model_file, 'rb') as f:
     model_options = pkl.load(f)
 
-  param_file = os.path.join(model_dir, '%s.npz' % model_prefix) 
+  param_file = os.path.join(model_dir, model_grads) 
   params = init_params(model_options)
   params = load_params(param_file, params)
   tparams = init_tparams(params)
@@ -43,7 +44,8 @@ def main(model_dir, model_prefix, dict_src, dict_trg, hyp_filename,
   for kk, vv in word_dict_trg.iteritems():
     word_idict_trg[vv] = kk
 
-  temp_dir = os.path.dirname(hyp_filename)
+  #temp_dir = os.path.dirname(hyp_filename)
+  temp_dir = model_dir # TODO better solution for this 
   hyp_src_fname = os.path.join(temp_dir, '%s.src.tmp' % hyp_filename)
   hyp_trg_fname = os.path.join(temp_dir, '%s.trg.tmp' % hyp_filename)
  
@@ -65,19 +67,8 @@ def main(model_dir, model_prefix, dict_src, dict_trg, hyp_filename,
                       n_words_target=n_words,
                       source_word_level=0,
                       target_word_level=0,
-                      batch_size=32,
-                      sort_size=20) #?? dunno what this param does
-
-  valid = TextIterator(source="/nfs/topaz/lcheung/data/toy/toy.ug-en.ug.dev",
-                       target="/nfs/topaz/lcheung/data/toy/toy.ug-en.en.dev",
-                       source_dict=dict_src,
-                       target_dict=dict_trg,
-                       n_words_source=n_words_src,
-                       n_words_target=n_words,
-                       source_word_level=0,
-                       target_word_level=0,
-                       batch_size=32,
-                       sort_size=20)
+                      batch_size=1,
+                      sort_size=1) #?? dunno what this param does
 
   print 'Building model...\n',
   trng, use_noise, \
@@ -101,13 +92,7 @@ def main(model_dir, model_prefix, dict_src, dict_trg, hyp_filename,
                            model_options,
                            test,
                            5)
-  valid_scores = pred_probs(f_log_probs,
-                           prepare_data,
-                           model_options,
-                           valid,
-                           5)
   print test_scores.mean()
-  print valid_scores.mean()
 
   os.remove(hyp_src_fname)
   os.remove(hyp_trg_fname)
@@ -123,7 +108,8 @@ def main(model_dir, model_prefix, dict_src, dict_trg, hyp_filename,
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-model_dir', type=str) # dir with models
-    parser.add_argument('-model_prefix', type=str) # prefix name 
+    parser.add_argument('-model_pkl', type=str) # prefix name 
+    parser.add_argument('-model_grads', type=str) # prefix name 
     parser.add_argument('-saveto', type=str, ) # absolute path where the translation should be saved
     parser.add_argument('-dict_src', type=str, default=None)
     parser.add_argument('-dict_trg', type=str, default=None)
@@ -141,7 +127,7 @@ if __name__ == "__main__":
     print args
 
     time1 = time.time()
-    main(args.model_dir, args.model_prefix, args.dict_src, 
+    main(args.model_dir, args.model_pkl, args.model_grads, args.dict_src, 
          args.dict_trg, args.hyp, args.saveto,
          args.n_words_src, args.n_words)
     time2 = time.time()

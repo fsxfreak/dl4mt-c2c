@@ -108,7 +108,7 @@ def train(
       cidx=None,
       layers=None,
       save_every_saveFreq=0,
-      save_burn_in=20000,
+      save_burn_in=5000, # NOTE : I think this is how actual model savse
       use_bpe=0,
       quit_immediately=False,
       init_params=None,
@@ -181,6 +181,7 @@ def train(
         if re_load_old_setting:
             with open(model_name, 'rb') as f:
                 models_options = cPickle.load(f)
+        print 'Loading params with file %s' % file_name
         params = load_params(file_name, params)
         # reload history
         model = numpy.load(file_name)
@@ -566,8 +567,6 @@ def train(
 
                 params = unzip(tparams)
                 optparams = unzip(toptparams)
-                print '####unzippin'
-                print 'toptparams;', toptparams
                 numpy.savez(file_name, history_errs=history_errs, uidx=uidx, eidx=eidx,
                             cidx=cidx, **params)
                 numpy.savez(opt_file_name, **optparams)

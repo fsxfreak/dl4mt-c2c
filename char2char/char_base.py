@@ -377,6 +377,4 @@ def gen_sample(tparams, f_init, f_next, x, options, trng=None,
                 sample.append(hyp_samples[idx])
                 sample_score.append(hyp_scores[idx])
 
-    print '@@@@gen'
-    print sample
     return sample, sample_score

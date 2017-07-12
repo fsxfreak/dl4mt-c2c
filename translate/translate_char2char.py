@@ -44,7 +44,6 @@ def translate_model(jobqueue, resultqueue, model, options, k, normalize, build_s
             score = score / lengths
 
         sidx = numpy.argmin(score)
-
         return sample[sidx]
 
     while jobqueue:
@@ -98,7 +97,6 @@ def main(model, dictionary, dictionary_target, source_file, saveto, k=5,
             for w in cc:
                 if w == 0:
                     break
-                print '\t', w
                 if utf8:
                     ww.append(word_idict_trg[w].encode('utf-8'))
                 else:
