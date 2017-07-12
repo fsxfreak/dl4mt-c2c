@@ -6,7 +6,7 @@ import time
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-sys.path.insert(0, "/nfs/topaz/lcheung/code/dl4mt-c2c/char2char") # change appropriately
+sys.path.insert(0, "/home/nlg-05/ljcheung/code/dl4mt-c2c/char2char") # change appropriately
 
 import numpy
 import cPickle as pkl
