@@ -74,44 +74,6 @@ def init_params(options):
 
     return params
 
-def test_sample(f_init, f_next, x, y):
-  # get initial state of decoder rnn and encoder context
-  ret = f_init(x)
-
-  next_state_char, next_state_word, ctx = ret[0], ret[1], ret[2]
-  next_w = -1 * numpy.ones((1,)).astype('int64')  # bos indicator
-
-  total_p = 0.0
-  for ii in xrange(len(y)):
-    inps = [next_w, ctx, next_state_char, next_state_word]
-    ret = f_next(*inps)
-    next_p, next_w, next_state_char, next_state_word = ret[0], ret[1], ret[2], ret[3]
-
-    '''
-    print '$$$testloop'
-    print 'ctx;', ctx.shape
-    print 'next_p;', next_p.shape
-    print 'next_w;', next_w.shape
-    print 'next_state_char;', next_state_char.shape
-    print 'next_state_word;', next_state_word.shape
-    print ii, 'force;', y[ii][0]
-    print ii, 'forcelen;', len(next_p[0])
-    '''
-
-    next_char_id = y[ii][0]
-    total_p += numpy.log(next_p[0, next_char_id])
-
-    # TODO feed in forced translations somehow
-    # to the next_state char and next state word perhaps
-    next_w = numpy.array([next_char_id])
-    for i, a in enumerate(next_state_char):
-      print ii, i, a[:3]
-    #next_state_char = numpy.array(hyp_states_char)
-    #next_state_word = numpy.array(hyp_states_word)
-
-  return total_p
-
-
 def build_model(tparams, options):
     opt_ret = OrderedDict()
 
@@ -303,38 +265,6 @@ def build_sampler(tparams, options, trng, use_noise):
 
     return f_init, f_next
 
-def test_sample(f_init, f_next, x, y):
-  # get initial state of decoder rnn and encoder context
-  ret = f_init(x)
-
-  next_state_char, next_state_word, ctx = ret[0], ret[1], ret[2]
-  next_w = -1 * numpy.ones((1,)).astype('int64')  # bos indicator
-  print '$$$testbefore'
-  print 'ctx;', ctx.shape
-  print 'next_w;', next_w.shape
-  print 'next_state_char;', next_state_char.shape
-  print 'next_state_word;', next_state_word.shape
-
-  total_p = 0.0
-  for ii in xrange(len(y)):
-    inps = [next_w, ctx, next_state_char, next_state_word]
-    ret = f_next(*inps)
-    next_p, next_w, next_state_char, next_state_word = ret[0], ret[1], ret[2], ret[3]
-
-    print '$$$testloop'
-    print 'ctx;', ctx.shape
-    print 'next_p;', next_p.shape
-    print 'next_w;', next_w.shape
-    print 'next_state_char;', next_state_char.shape
-    print 'next_state_word;', next_state_word.shape
-    total_p += numpy.log(next_p[0, y[ii, 0][0]])
-
-    #next_w = numpy.array([w[-1] for w in hyp_samples])
-    #next_state_char = numpy.array(hyp_states_char)
-    #next_state_word = numpy.array(hyp_states_word)
-
-  return total_p
-
 def gen_sample(tparams, f_init, f_next, x, options, trng=None,
                k=1, maxlen=500, stochastic=True, argmax=False):
 
@@ -439,12 +369,6 @@ def gen_sample(tparams, f_init, f_next, x, options, trng=None,
             next_w = numpy.array([w[-1] for w in hyp_samples])
             next_state_char = numpy.array(hyp_states_char)
             next_state_word = numpy.array(hyp_states_word)
-            '''
-            print ii, '****moreshapes'
-            for i in range(len(hyp_states_char)):
-              print i, hyp_states_char[i][:2]
-              print i, next_state_char[i][:2]
-            '''
 
     if not stochastic:
         # dump every remaining one

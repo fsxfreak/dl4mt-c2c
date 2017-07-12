@@ -6,7 +6,7 @@ import time
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-sys.path.insert(0, "/home/nlg-05/ljcheung/code/dl4mt-c2c/char2char") # change appropriately
+sys.path.insert(0, "/nfs/topaz/lcheung/code/dl4mt-c2c/char2char") # change appropriately
 
 import numpy
 import cPickle as pkl
@@ -44,9 +44,8 @@ def translate_model(jobqueue, resultqueue, model, options, k, normalize, build_s
             score = score / lengths
 
         sidx = numpy.argmin(score)
-        score = 1 / numpy.min(score) # higher the score, the better
 
-        return sample[sidx], score
+        return sample[sidx]
 
     while jobqueue:
         req = jobqueue.pop(0)
@@ -54,10 +53,10 @@ def translate_model(jobqueue, resultqueue, model, options, k, normalize, build_s
         idx, x = req[0], req[1]
         if not silent:
             print "sentence", idx, model_id
-        seq, score = _translate(x)
+        seq = _translate(x)
         #print 'Seq', seq, 'Score:', score
 
-        resultqueue.append((idx, seq, score))
+        resultqueue.append((idx, seq))
     return
 
 def main(model, dictionary, dictionary_target, source_file, saveto, k=5,
@@ -67,8 +66,6 @@ def main(model, dictionary, dictionary_target, source_file, saveto, k=5,
 
     from char_base import (build_sampler, gen_sample, init_params)
 
-    # load model model_options
-    # /misc/kcgscratch1/ChoGroup/jasonlee/dl4mt-cdec/models/one-multiscale-conv-two-hw-lngru-1234567-100-150-200-200-200-200-200-66-one.pkl
     pkl_file = model.split('.')[0] + '.pkl'
     with open(pkl_file, 'rb') as f:
         options = pkl.load(f)
@@ -79,8 +76,6 @@ def main(model, dictionary, dictionary_target, source_file, saveto, k=5,
     word_idict = dict()
     for kk, vv in word_dict.iteritems():
         word_idict[vv] = kk
-    #word_idict[0] = 'ZERO'
-    #word_idict[1] = 'UNK'
 
     # load target dictionary and invert
     with open(dictionary_target, 'rb') as f:
@@ -89,8 +84,6 @@ def main(model, dictionary, dictionary_target, source_file, saveto, k=5,
     for kk, vv in word_dict_trg.iteritems():
         word_idict_trg[vv] = kk
 
-    #word_idict_trg[0] = 'ZERO'
-    #word_idict_trg[1] = 'UNK'
 
     # create input and output queues for processes
     jobqueue = []
@@ -151,7 +144,7 @@ def main(model, dictionary, dictionary_target, source_file, saveto, k=5,
 
         for idx in xrange(n_samples):
             resp = resultqueue.pop(0)
-            trans[resp[0]] = (resp[1], resp[2]) # (sequence, score)
+            trans[resp[0]] = resp[1] # (sequence, score)
             if numpy.mod(idx, 10) == 0:
                 if not silent:
                     print 'Sample ', (idx+1), '/', n_samples, ' Done decoding using', model_id
@@ -163,14 +156,9 @@ def main(model, dictionary, dictionary_target, source_file, saveto, k=5,
 
     translate_model(jobqueue, resultqueue, model, options, k, normalize, build_sampler, gen_sample, init_params, model_id, silent)
     raw_outputs = _retrieve_jobs(n_samples, silent)
-    seqs = list(map(lambda pair : pair[0], raw_outputs))
-    scores = list(map(lambda pair : pair[1], raw_outputs))
-    trans = _seqs2words(seqs)
+    trans = _seqs2words(raw_outputs)
     print "translations retrieved"
 
-    with open('%s.scores' % saveto, 'w') as f:
-        f.write(u'\n'.join(map(lambda s : str(s), scores)).encode('utf-8'))
-        f.write(u'\n') # missing end newline
     with open(saveto, 'w') as f:
         f.write(u'\n'.join(trans).encode('utf-8'))
         f.write(u'\n')
