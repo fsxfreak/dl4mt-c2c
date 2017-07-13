@@ -422,7 +422,7 @@ def train(
             if numpy.mod(uidx, dispFreq) == 0:
                 ud = time.time() - ud_start
                 wps = n_samples / float(time.time() - time0)
-                print 'Epoch ', eidx, 'Update ', uidx, 'Cost ', cost, 'NaN_in_grad', NaN_grad_cnt,\
+                print str(datetime.datetime.now()), 'Epoch ', eidx, 'Update ', uidx, 'Cost ', cost, 'NaN_in_grad', NaN_grad_cnt,\
                       'NaN_in_cost', NaN_cost_cnt, 'Gradient_clipped', clipped_cnt, 'UD ', ud, "%.2f sentences/s" % wps
                 ud_start = time.time()
 
@@ -574,9 +574,13 @@ def train(
                 if save_every_saveFreq and (uidx >= save_burn_in):
                     this_file_name = '%s%s.%d.npz' % (model_path, save_file_name, uidx)
                     this_opt_file_name = '%s%s%s.%d.npz' % (model_path, save_file_name, '.grads', uidx)
+                    this_opt_file_name_rec = '%s%s%s.rec.npz' % (model_path, save_file_name, '.grads')
                     numpy.savez(this_file_name, history_errs=history_errs, uidx=uidx, eidx=eidx,
                                 cidx=cidx, **params)
                     numpy.savez(this_opt_file_name, history_errs=history_errs, uidx=uidx, eidx=eidx,
+                                cidx=cidx, **params)
+                    # overwrite most recent optimized model
+                    numpy.savez(this_opt_file_name_rec, history_errs=history_errs, uidx=uidx, eidx=eidx,
                                 cidx=cidx, **params)
                     if best_p is not None and saveFreq != validFreq:
                         this_best_file_name = '%s%s.%d.best.npz' % (model_path, save_file_name, uidx)
