@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+#PBS -q isi
+#PBS -l walltime=96:00:00
+#PBS -l gpus=1
+#PBS -j oe
+
 import argparse
 import sys
 import os
@@ -7,7 +13,7 @@ import tempfile
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-sys.path.insert(0, "/nfs/topaz/lcheung/code/dl4mt-c2c/char2char") # change appropriately
+sys.path.insert(0, "/home/nlg-05/ljcheung/code/dl4mt-c2c/char2char") # change appropriately
 
 import numpy
 import cPickle as pkl
@@ -19,7 +25,7 @@ from data_iterator import TextIterator
 from char_base import build_sampler, build_model, init_params
 
 def main(model_dir, model_pkl, model_grads, dict_src, dict_trg, hyp_filename, 
-        saveto, n_words_src, n_words):
+        saveto, n_words_src, n_words, workdir):
 
   print 'Loading model.'
 
@@ -44,10 +50,14 @@ def main(model_dir, model_pkl, model_grads, dict_src, dict_trg, hyp_filename,
   for kk, vv in word_dict_trg.iteritems():
     word_idict_trg[vv] = kk
 
-  #temp_dir = os.path.dirname(hyp_filename)
-  temp_dir = model_dir # TODO better solution for this 
-  hyp_src_fname = os.path.join(temp_dir, '%s.src.tmp' % hyp_filename)
-  hyp_trg_fname = os.path.join(temp_dir, '%s.trg.tmp' % hyp_filename)
+  temp_dir = workdir
+  print 'Using temp directory', temp_dir
+  hyp_src_fname = os.path.join(temp_dir, 
+      '%s.src.%d' % (os.path.basename(hyp_filename), int(time.time())))
+  hyp_trg_fname = os.path.join(temp_dir, 
+      '%s.trg.%d' % (os.path.basename(hyp_filename), int(time.time())))
+  print 'hyp temp:', hyp_src_fname
+  print 'hyp temp:', hyp_trg_fname
  
   hyp_src = open(hyp_src_fname, 'w')
   hyp_trg = open(hyp_trg_fname, 'w')
@@ -114,8 +124,9 @@ if __name__ == "__main__":
     parser.add_argument('-dict_src', type=str, default=None)
     parser.add_argument('-dict_trg', type=str, default=None)
     parser.add_argument('-hyp', type=str, default=None)
-    parser.add_argument('-n_words_src', type=int, default=304, help="298 for FI-EN")
-    parser.add_argument('-n_words', type=int, default=302, help="292 for FI-EN")
+    parser.add_argument('-n_words_src', type=int, default=304)
+    parser.add_argument('-n_words', type=int, default=302)
+    parser.add_argument('-workdir', type=str, default='/tmp', help="temp directory")
 
     args = parser.parse_args()
 
@@ -129,7 +140,7 @@ if __name__ == "__main__":
     time1 = time.time()
     main(args.model_dir, args.model_pkl, args.model_grads, args.dict_src, 
          args.dict_trg, args.hyp, args.saveto,
-         args.n_words_src, args.n_words)
+         args.n_words_src, args.n_words, args.workdir)
     time2 = time.time()
     duration = (time2-time1)/float(60)
     print("Translation took %.2f minutes" % duration)
