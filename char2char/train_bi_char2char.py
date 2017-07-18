@@ -80,6 +80,7 @@ def main(job_id, args):
         build_sampler=build_sampler,
         gen_sample=gen_sample,
         prepare_data=prepare_data,
+        child_begin=args.child_begin,
     )
     return validerr
 
@@ -124,6 +125,9 @@ if __name__ == '__main__':
     parser.add_argument('-re_load', action="store_true", default=False)
     parser.add_argument('-re_load_old_setting', action="store_true", default=False)
     parser.add_argument('-quit_immediately', action="store_true", default=False, help="if true, will not proceed training, only print the size of the model.")
+
+    parser.add_argument('-child_begin', action="store_true", default=True,
+          help='true if beginning to train child model, otherwise false')
 
     parser.add_argument('-max_epochs', type=int, default=1000000000000, help="")
     parser.add_argument('-patience', type=int, default=-1, help="")

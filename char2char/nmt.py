@@ -116,6 +116,7 @@ def train(
       build_sampler=None,
       gen_sample=None,
       prepare_data=None,
+      child_begin=False,
       **kwargs
     ):
 
@@ -341,7 +342,8 @@ def train(
     ud_start = time.time()
     estop = False
 
-    if re_load:
+    # Don't skip examples if beginning to train child model.
+    if re_load and not child_begin:
         print "Checkpointed minibatch number: %d" % cidx
         for cc in xrange(cidx):
             if numpy.mod(cc, 1000)==0:
