@@ -116,6 +116,8 @@ def train(
       build_sampler=None,
       gen_sample=None,
       prepare_data=None,
+      child_begin=False,
+      child=False,
       **kwargs
     ):
 
@@ -292,7 +294,9 @@ def train(
     print 'Done'
 
     print 'Computing gradient...',
-    grads = tensor.grad(cost, wrt=itemlist(tparams))
+
+    wrts = itemlist(tparams)
+    grads = tensor.grad(cost, wrt=wrts)
     print 'Done'
 
     if clip_c > 0:
@@ -301,30 +305,37 @@ def train(
         not_finite = 0
         clipped = 0
 
+    locked_tparams = None
+    if child:
+        locked_tparams = ['Wemb_dec']
+        print 'Locking:', locked_tparams
+
     # compile the optimizer, the actual computational graph is compiled here
     lr = tensor.scalar(name='lr')
     print 'Building optimizers...',
     if re_load and os.path.exists(file_name):
         if clip_c > 0:
-            f_grad_shared, f_update, toptparams = eval(optimizer)(lr, tparams, grads, inps, cost=cost,
-                                                                  not_finite=not_finite, clipped=clipped,
-                                                                  file_name=opt_file_name)
+            f_grad_shared, f_update, toptparams = \
+                eval(optimizer)(lr, tparams, grads, inps, cost=cost,
+                                not_finite=not_finite, clipped=clipped,
+                                file_name=opt_file_name,
+                                locked_tparams=locked_tparams)
         else:
-            f_grad_shared, f_update, toptparams = eval(optimizer)(lr, tparams, grads, inps, cost=cost,
-                                                                  file_name=opt_file_name)
+            f_grad_shared, f_update, toptparams = \
+                eval(optimizer)(lr, tparams, grads, inps, cost=cost,
+                                file_name=opt_file_name,
+                                locked_tparams=locked_tparams)
     else:
         # re_load = False, clip_c = 1
         if clip_c > 0:
-            f_grad_shared, f_update, toptparams = eval(optimizer)(lr, tparams, grads, inps, cost=cost,
-                                                                  not_finite=not_finite, clipped=clipped)
+            f_grad_shared, f_update, toptparams = \
+                eval(optimizer)(lr, tparams, grads, inps, cost=cost,
+                                not_finite=not_finite, clipped=clipped,
+                                locked_tparams=locked_tparams)
         else:
-            f_grad_shared, f_update, toptparams = eval(optimizer)(lr, tparams, grads, inps, cost=cost)
-
-            # f_grad_shared = theano.function(inp, [cost, not_finite, clipped], updates=gsup, profile=profile)
-
-            # f_update = theano.function([lr], [], updates=updates,
-            #                   on_unused_input='ignore', profile=profile)
-            # toptparams
+            f_grad_shared, f_update, toptparams = \
+                eval(optimizer)(lr, tparams, grads, inps, cost=cost,
+                                locked_tparams=locked_tparams)
 
     print 'Done'
 
@@ -341,7 +352,8 @@ def train(
     ud_start = time.time()
     estop = False
 
-    if re_load:
+    # Don't skip examples if beginning to train child model.
+    if re_load and not child_begin:
         print "Checkpointed minibatch number: %d" % cidx
         for cc in xrange(cidx):
             if numpy.mod(cc, 1000)==0:

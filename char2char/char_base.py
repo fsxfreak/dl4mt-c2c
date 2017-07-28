@@ -260,9 +260,6 @@ def build_sampler(tparams, options, trng, use_noise):
     f_next = theano.function(inps, outs, name='f_next', profile=profile)
     print 'Done'
 
-    print '$$shapes'
-    print 'y;', tensor.shape(y)
-
     return f_init, f_next
 
 def gen_sample(tparams, f_init, f_next, x, options, trng=None,

@@ -2674,7 +2674,7 @@ def gradient_clipping(grads, tparams, clip_c=10):
 
 
 def adam(lr, tparams, grads, inp, cost, not_finite=None, clipped=None,
-         b1=0.9, b2=0.999, eps=1e-8, file_name=None):
+         b1=0.9, b2=0.999, eps=1e-8, file_name=None, locked_tparams=None):
     gshared = [theano.shared(p.get_value() * 0., name='%s_grad' % k)
                for k, p in tparams.iteritems()]
 
@@ -2704,6 +2704,8 @@ def adam(lr, tparams, grads, inp, cost, not_finite=None, clipped=None,
     lr_t = lr * tensor.sqrt(1. - fix2) / (1. - fix1)
 
     for (k, p), g in zip(tparams.items(), gshared):
+        if k in locked_tparams:
+            g = tensor.zeros_like(g)
         m_t = b1 * toptparams[_p(k, 'm')] + (1. - b1) * g
         v_t = b2 * toptparams[_p(k, 'v')] + (1. - b2) * g**2
         g_t = lr_t * m_t / (tensor.sqrt(v_t) + eps)
